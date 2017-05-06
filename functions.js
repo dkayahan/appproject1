@@ -55,7 +55,7 @@ function divideCorpusRandomly(corpus){
 	var testLength = Math.round(corpus.length/10); //10% of corpus is test
 	var testData = new Array();
 	for(var i=0; i<testLength; i++){ //For each time randomly select an entry in corpus for test data
-		var rand = Math.floor(Math.random()*(corpus.length+1));
+		var rand = Math.floor(Math.random()*corpus.length);
 		testData.push(corpus[rand]); //add to test corpus
 		corpus.splice(rand, 1); //remove test data from corpus. Remaining part will be training corpus
 	}
