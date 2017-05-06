@@ -70,10 +70,10 @@ function displayCorpus(dataSet){
 	var tb = document.createElement("table");
 	var tr = document.createElement("tr");
 	var th = document.createElement("th");
-	th.innerHTML = "Train Data";
+	th.innerHTML = "Train Data ("+ dataSet.train.length + ")";
 	tb.appendChild(th);
 	th = document.createElement("th");
-	th.innerHTML = "Test Data";
+	th.innerHTML = "Test Data ("+ dataSet.test.length + ")";
 	tb.appendChild(th);
 	for(var i=0; i<dataSet.train.length; i++){
 		var tr = document.createElement("tr");
