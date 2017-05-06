@@ -51,14 +51,22 @@ function parseCorpus(text){
  * Divides given corpus into training(90%) and test(%10)
  * Manipulates on parameter!
  */
-function divideCorpusRandomly(corpus){
+function divideCorpusRandomly(corpus, random){
 	var testLength = Math.round(corpus.length/10); //10% of corpus is test
 	var testData = new Array();
+	var randHistory = new Array();
+	var previousRand = JSON.parse(localStorage.getItem("randSequence"));
 	for(var i=0; i<testLength; i++){ //For each time randomly select an entry in corpus for test data
-		var rand = Math.floor(Math.random()*corpus.length);
+		var rand;
+		if(random || previousRand == null) //generate different corpus for each time 
+			rand = Math.floor(Math.random()*corpus.length);
+		else
+			rand = previousRand[i];
+		randHistory.push(rand);
 		testData.push(corpus[rand]); //add to test corpus
 		corpus.splice(rand, 1); //remove test data from corpus. Remaining part will be training corpus
 	}
+	localStorage.setItem("randSequence", JSON.stringify(randHistory));
 	return {"train": corpus, "test":testData};
 }
 
@@ -98,7 +106,7 @@ function init(){
 		//console.log(corpus[0].getPOSTag());
 		//console.log(corpus[0].words);
 		//console.log(corpus[0].tags);
-		var dataSet = divideCorpusRandomly(corpus);
+		var dataSet = divideCorpusRandomly(corpus, false);
 		console.log("DataSet: ",dataSet);
 		displayCorpus(dataSet);
 	});
