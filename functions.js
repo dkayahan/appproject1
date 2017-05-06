@@ -47,13 +47,59 @@ function parseCorpus(text){
 	return corpus;
 }
 
+/**
+ * Divides given corpus into training(90%) and test(%10)
+ * Manipulates on parameter!
+ */
+function divideCorpusRandomly(corpus){
+	var testLength = Math.round(corpus.length/10); //10% of corpus is test
+	var testData = new Array();
+	for(var i=0; i<testLength; i++){ //For each time randomly select an entry in corpus for test data
+		var rand = Math.floor(Math.random()*(corpus.length+1));
+		testData.push(corpus[rand]); //add to test corpus
+		corpus.splice(rand, 1); //remove test data from corpus. Remaining part will be training corpus
+	}
+	return {"train": corpus, "test":testData};
+}
+
+/**
+ * Display train and test datasets
+ * @param dataSet
+ */
+function displayCorpus(dataSet){
+	var tb = document.createElement("table");
+	var tr = document.createElement("tr");
+	var th = document.createElement("th");
+	th.innerHTML = "Train Data";
+	tb.appendChild(th);
+	th = document.createElement("th");
+	th.innerHTML = "Test Data";
+	tb.appendChild(th);
+	for(var i=0; i<dataSet.train.length; i++){
+		var tr = document.createElement("tr");
+		var td = document.createElement("td");
+		td.innerHTML = dataSet.train[i].getSentence() + " <i>(" + dataSet.train[i].getPOSTag() + ")</i>";
+		tr.appendChild(td);
+		td = document.createElement("td");
+		if(typeof dataSet.test[i] !== "undefined"){
+			td.innerHTML = dataSet.test[i].getSentence() + " <i>(" + dataSet.test[i].getPOSTag() + ")</i>";
+		};
+		tr.appendChild(td);
+		tb.appendChild(tr);
+	}
+	document.body.appendChild(tb);
+}
+
 function init(){
 	readTreeBank(function(response){
 		var corpus = parseCorpus(response);
-		console.log(corpus);
-		console.log(corpus[0].getSentence());
-		console.log(corpus[0].getPOSTag());
-		console.log(corpus[0].words);
-		console.log(corpus[0].tags);
+		//console.log("Corpus:", corpus);
+		//console.log(corpus[0].getSentence());
+		//console.log(corpus[0].getPOSTag());
+		//console.log(corpus[0].words);
+		//console.log(corpus[0].tags);
+		var dataSet = divideCorpusRandomly(corpus);
+		console.log("DataSet: ",dataSet);
+		displayCorpus(dataSet);
 	});
 }

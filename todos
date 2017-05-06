@@ -1,7 +1,7 @@
 Tasks
-1. Parse METUSABANCI_treebank.conll and extract sentences with pos tags
-2. Split sentences into test and training sets randomly; 90% training, 10% test
-2.1. Display training and test datasets
+DONE 1. Parse METUSABANCI_treebank.conll and extract sentences with pos tags
+DONE 2. Split sentences into test and training sets randomly; 90% training, 10% test
+DONE 2.1. Display training and test datasets
 3. Implement Viterbi Algorithm
 3.1. Calculate word based success rate -> number of correctly tagged words / total number of words
 3.2. Calculate sentence based success rate -> number of correctly tagged sentence (all words in the sentence must be tagged correctly) / total number of sentences
