@@ -3,7 +3,7 @@
  * Returns input as callback
  */
 function readTreeBank(callback){
-	var file = "file:///home/dilek/Desktop/boun/nlp/appProject1/project1/METUSABANCI_treebank.conll";
+	var file = "../METUSABANCI_treebank.conll";
 	console.log("Reading treebank from: "+file);
 	var xmlReq = new XMLHttpRequest();
 		xmlReq.open("GET", file, true);
