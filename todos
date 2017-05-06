@@ -1,3 +1,4 @@
+Tasks
 1. Parse METUSABANCI_treebank.conll and extract sentences with pos tags
 2. Split sentences into test and training sets randomly; 90% training, 10% test
 2.1. Display training and test datasets
