@@ -215,8 +215,55 @@ function displayTransitionMatrix(transProbs){
 		tb.appendChild(tr);
 	}
 	document.body.appendChild(tb);
-	return posTags;
+	var arrayOfPosTags = new Array();
+	for(var tag in posTags){
+		if(tag !== "start") //ignore start
+			arrayOfPosTags.push(tag);
+	}
+	return arrayOfPosTags;
 }
+
+/**
+ * Displays word probabilities of given input
+ * availableTags == all POS tags in transition matrix
+ */
+function displayWordProbMatrix(wordProbs, availableTags, input){
+	//set words to columns
+	var tb = document.createElement("table");
+	tb.setAttribute("cellpadding", "5px");
+	var tr = document.createElement("tr");
+	var td = document.createElement("td");
+	tr.appendChild(td);
+	for(var i=0; i<input.words.length; i++){
+		td = document.createElement("td");
+		td.innerHTML = "<b>" + input.words[i] + "</b>";
+		tr.appendChild(td);
+	}
+	tb.appendChild(tr);
+	
+	//set POSs to rows
+	for(i=0; i<availableTags.length; i++){
+		tr = document.createElement("tr");
+		td = document.createElement("td");
+		td.innerHTML = "<b>" + availableTags[i] + "</b>";
+		tr.appendChild(td);
+		for(var j=0; j<input.words.length; j++){
+			td = document.createElement("td");
+			try{
+				if(typeof wordProbs[input.words[j]][availableTags[i]] !== "undefined")
+					td.innerHTML = wordProbs[input.words[j]][availableTags[i]].toFixed(8);
+				else
+					td.innerHTML = 0;
+			}catch(ex){ //word probability is not available for given tag
+				td.innerHTML = "0";
+			};
+			tr.appendChild(td);
+		}
+		tb.appendChild(tr);
+	}	
+	document.body.appendChild(tb);
+};
+
 
 function init(){
 	readTreeBank(function(response){
@@ -231,10 +278,10 @@ function init(){
 		//displayCorpus(dataSet);
 		//console.log("Transition prob of Adj-Noun: ", probs.transitionProbs["Adj"]["Noun"]); //Use with try-catch, if throws exception assign 0
 		//console.log("Word prob of broşür-Noun: ", probs.wordProbs["broşür"]["Noun"]); //Use with try-catch, if throws exception assign 0
-		var probs = trainSystem(dataSet.train);
+		probs = trainSystem(dataSet.train);
 		console.log("Trained transition Probabilities: ", probs.transitionProbs);
 		var posTags = displayTransitionMatrix(probs.transitionProbs);
 		console.log("All POS Tags available in train dataSet: ", posTags);
-	
+		displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[8]);	
 	});
 }
