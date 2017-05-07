@@ -98,6 +98,57 @@ function displayCorpus(dataSet){
 	document.body.appendChild(tb);
 }
 
+/**
+ * Calculate tranisition and word probabilities
+ * @param trainData
+ */
+function trainSystem(trainData){
+	
+	var POSCounts = new Object();
+	//set POS counts
+	for(var i=0; i<trainData.length; i++){
+		for(var j=0; j<trainData[i].tags.length; j++){
+			if(typeof POSCounts[trainData[i].tags[j]] === "undefined")
+				 POSCounts[trainData[i].tags[j]] = 1;
+			else
+				 POSCounts[trainData[i].tags[j]] +=1;
+		}
+	}
+	
+	var transitionProbs = new Object();
+	var wordProbs = new Object();
+	for(var i=0; i<trainData.length; i++){
+		//console.log(trainData[i].getPOSTag());
+		//console.log(trainData[i].getSentence());
+
+		for(var j=0; j<trainData[i].tags.length - 1; j++){
+			//Set transition probabilities
+			if(typeof transitionProbs[trainData[i].tags[j]] === "undefined")
+				transitionProbs[trainData[i].tags[j]] = new Object();
+			
+			if(typeof transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] === "undefined")
+				transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] = 1; //Cause undefineds - no problem
+			else
+				transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] = 
+					transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]]*POSCounts[trainData[i].tags[j]] + 1;
+			transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] /= POSCounts[trainData[i].tags[j]]; //Divide by count of first tag
+			//Set transition probabilities
+			
+			//Set for word probabilities
+			if(typeof wordProbs[trainData[i].words[j]] === "undefined")
+				wordProbs[trainData[i].words[j]] = new Object();
+			if(typeof wordProbs[trainData[i].words[j]][trainData[i].tags[j]] === "undefined")
+				wordProbs[trainData[i].words[j]][trainData[i].tags[j]] = 1; 
+			else 
+				wordProbs[trainData[i].words[j]][trainData[i].tags[j]] = 
+					wordProbs[trainData[i].words[j]][trainData[i].tags[j]]*POSCounts[trainData[i].tags[j]] + 1; 
+			wordProbs[trainData[i].words[j]][trainData[i].tags[j]] /= POSCounts[trainData[i].tags[j]];
+			//Set for word probabilities
+		}
+	}	
+	return {"transitionProbs" : transitionProbs, "wordProbs": wordProbs};
+}
+
 function init(){
 	readTreeBank(function(response){
 		var corpus = parseCorpus(response);
@@ -107,7 +158,10 @@ function init(){
 		//console.log(corpus[0].words);
 		//console.log(corpus[0].tags);
 		var dataSet = divideCorpusRandomly(corpus, false);
-		console.log("DataSet: ",dataSet);
+		//console.log("DataSet: ",dataSet);
 		displayCorpus(dataSet);
+		var probs = trainSystem(dataSet.train);
+		console.log("Transition prob of Adj-Noun: ", probs.transitionProbs["Adj"]["Noun"]); //Use with try-catch, if throws exception assign 0
+		console.log("Word prob of broşür-Noun: ", probs.wordProbs["broşür"]["Noun"]); //Use with try-catch, if throws exception assign 0
 	});
 }
