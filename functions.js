@@ -103,7 +103,7 @@ function displayCorpus(dataSet){
  * @param trainData
  */
 function trainSystem(trainData){
-	
+	//trainData.length = 2;  //For test purposes
 	var POSCounts = new Object();
 	//set POS counts
 	for(var i=0; i<trainData.length; i++){
@@ -118,10 +118,21 @@ function trainSystem(trainData){
 	var transitionProbs = new Object();
 	var wordProbs = new Object();
 	for(var i=0; i<trainData.length; i++){
-		//console.log(trainData[i].getPOSTag());
+		//console.log(trainData[i].getPOSTag()); //For test purposes
 		//console.log(trainData[i].getSentence());
+		
+		//set transition probs for start
+		if(typeof transitionProbs["start"] === "undefined") //init start tag
+			transitionProbs["start"] = new Object();
+		if(typeof transitionProbs["start"][trainData[i].tags[0]] === "undefined")
+			transitionProbs["start"][trainData[i].tags[0]] = 1;
+		else
+			transitionProbs["start"][trainData[i].tags[0]] = 
+				transitionProbs["start"][trainData[i].tags[0]]*trainData.length + 1; //trainData.length = count of <s>
+		transitionProbs["start"][trainData[i].tags[0]]  /= trainData.length; //trainData.length = count of <s>
+		//set transition probs for start
 
-		for(var j=0; j<trainData[i].tags.length - 1; j++){
+		for(var j=-1; j<trainData[i].tags.length - 1; j++){
 			//Set transition probabilities
 			if(typeof transitionProbs[trainData[i].tags[j]] === "undefined")
 				transitionProbs[trainData[i].tags[j]] = new Object();
@@ -149,6 +160,64 @@ function trainSystem(trainData){
 	return {"transitionProbs" : transitionProbs, "wordProbs": wordProbs};
 }
 
+/**
+ * Outputs transition probabilities
+ * returns collection of POSs available in training corpus
+ * @param transProbs
+ */
+function displayTransitionMatrix(transProbs){
+	var posTags = new Object();
+	for(var tag in transProbs){
+		if(tag != "undefined"){
+			posTags[tag] = null;
+			for(var tag2 in transProbs[tag]){
+				if(tag2 != "undefined"){
+					posTags[tag2] = null;
+				}
+			}
+		}			
+	}
+	var tb = document.createElement("table");
+	tb.setAttribute("cellpadding", "5px");
+	var setRowTitle = true;
+	for(var tag in posTags){
+		var setColTitle = true;
+		var tr = document.createElement("tr");	
+		if(setRowTitle){
+			var rowTitle = document.createElement("tr");
+			var td = document.createElement("td");
+			rowTitle.appendChild(td);
+			tb.appendChild(rowTitle);
+		}		
+		for(var tag2 in posTags){
+			if(tag2 != "start"){
+				if(setRowTitle){
+					var td = document.createElement("td");
+					td.innerHTML = "<b>" + tag2 + "</b>";
+					rowTitle.appendChild(td);
+				}
+				if(setColTitle){
+					var td = document.createElement("td");
+					td.innerHTML = "<b>" + tag + "</b>";
+					tr.appendChild(td);
+					setColTitle = false;
+				}			
+				//Set values
+				td = document.createElement("td");
+				if(typeof transProbs[tag][tag2] === "undefined")
+					td.innerHTML = "0<br><span style='font:13px italic'>" + tag + " -> " + tag2 + "</span>";
+				else
+					td.innerHTML = transProbs[tag][tag2].toFixed(8) + "<br><span style='font:13px italic'>" + tag + " -> " + tag2 + "</span>";
+				tr.appendChild(td);
+			}
+		}
+		setRowTitle = false;
+		tb.appendChild(tr);
+	}
+	document.body.appendChild(tb);
+	return posTags;
+}
+
 function init(){
 	readTreeBank(function(response){
 		var corpus = parseCorpus(response);
@@ -159,9 +228,13 @@ function init(){
 		//console.log(corpus[0].tags);
 		var dataSet = divideCorpusRandomly(corpus, false);
 		//console.log("DataSet: ",dataSet);
-		displayCorpus(dataSet);
+		//displayCorpus(dataSet);
+		//console.log("Transition prob of Adj-Noun: ", probs.transitionProbs["Adj"]["Noun"]); //Use with try-catch, if throws exception assign 0
+		//console.log("Word prob of broşür-Noun: ", probs.wordProbs["broşür"]["Noun"]); //Use with try-catch, if throws exception assign 0
 		var probs = trainSystem(dataSet.train);
-		console.log("Transition prob of Adj-Noun: ", probs.transitionProbs["Adj"]["Noun"]); //Use with try-catch, if throws exception assign 0
-		console.log("Word prob of broşür-Noun: ", probs.wordProbs["broşür"]["Noun"]); //Use with try-catch, if throws exception assign 0
+		console.log("Trained transition Probabilities: ", probs.transitionProbs);
+		var posTags = displayTransitionMatrix(probs.transitionProbs);
+		console.log("All POS Tags available in train dataSet: ", posTags);
+	
 	});
 }
