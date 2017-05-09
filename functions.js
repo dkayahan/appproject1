@@ -227,7 +227,7 @@ function displayTransitionMatrix(transProbs){
  * Displays word probabilities of given input
  * availableTags == all POS tags in transition matrix
  */
-function displayWordProbMatrix(wordProbs, availableTags, input){
+function displayWordProbMatrix(wordProbs, availablePOSTags, input){
 	//set words to columns
 	var tb = document.createElement("table");
 	tb.setAttribute("cellpadding", "5px");
@@ -242,16 +242,16 @@ function displayWordProbMatrix(wordProbs, availableTags, input){
 	tb.appendChild(tr);
 	
 	//set POSs to rows
-	for(i=0; i<availableTags.length; i++){
+	for(i=0; i<availablePOSTags.length; i++){
 		tr = document.createElement("tr");
 		td = document.createElement("td");
-		td.innerHTML = "<b>" + availableTags[i] + "</b>";
+		td.innerHTML = "<b>" + availablePOSTags[i] + "</b>";
 		tr.appendChild(td);
 		for(var j=0; j<input.words.length; j++){
 			td = document.createElement("td");
 			try{
-				if(typeof wordProbs[input.words[j]][availableTags[i]] !== "undefined")
-					td.innerHTML = wordProbs[input.words[j]][availableTags[i]].toFixed(8);
+				if(typeof wordProbs[input.words[j]][availablePOSTags[i]] !== "undefined")
+					td.innerHTML = wordProbs[input.words[j]][availablePOSTags[i]].toFixed(8);
 				else
 					td.innerHTML = 0;
 			}catch(ex){ //word probability is not available for given tag
@@ -264,6 +264,111 @@ function displayWordProbMatrix(wordProbs, availableTags, input){
 	document.body.appendChild(tb);
 };
 
+/**
+ * Implements vitrebi to given input sentence
+ */
+function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
+	var POSTagsWithStart = new Array("start"); //Prepend start tag to available POS tags
+	POSTagsWithStart = POSTagsWithStart.concat(availablePOSTags);
+	console.log(POSTagsWithStart);
+	
+	viterbiMatrix = new Object();	
+	for(var i = 0; i<POSTagsWithStart.length; i++){
+		viterbiMatrix[i] = new Object();
+		for(var j=0; j<input.words.length; j++){
+			viterbiMatrix[i][j] = {"v": -99 + " ("+i+""+j+")", "word": input.words[j], "tag": POSTagsWithStart[i], "backpointer": null};
+			if(j == 0){ //Initialization (of 1st column)
+				/*
+				 * Unknown words That is, do not use the word likelihood probabilities P(wi|ti) for unknown words. 
+				 * Just use the tag transition probabilities
+				 */
+				var ambiguityCheck = getNumericProb(wordProbs, viterbiMatrix[i][j].word, viterbiMatrix[i][j].tag);
+				if(ambiguityCheck == 0)
+					ambiguityCheck = 1;
+				viterbiMatrix[i][j].v = getNumericProb(transitionProbs, "start", viterbiMatrix[i][j].tag) * ambiguityCheck;
+				viterbiMatrix[i][j].backpointer = 0;
+			}
+		}
+	}
+	
+	for(j=1; j<input.words.length; j++){ //First word is already processed above
+		for(i=1; i<POSTagsWithStart.length; i++){ //Start tag is already processed above
+			var max = 0;
+			var maxPointer = -99;
+			for(var k=1; k<POSTagsWithStart.length; k++){ //get max of previous word's viterbi
+				var tmp = (viterbiMatrix[k][j-1].v * getNumericProb(transitionProbs, viterbiMatrix[k][j-1].tag, viterbiMatrix[i][j].tag)).toFixed(8);
+				if(tmp >= max){
+					max = tmp;
+					maxPointer = k;
+				}						
+			}
+
+			viterbiMatrix[i][j].backpointer = maxPointer;
+			ambiguityCheck = getNumericProb(wordProbs, viterbiMatrix[i][j].word, viterbiMatrix[i][j].tag);
+			if(ambiguityCheck == 0)
+				ambiguityCheck = 1;
+			viterbiMatrix[i][j].v = (max*ambiguityCheck).toFixed(8);
+			
+
+		}
+	}
+	
+	//console.log(viterbiMatrix);
+
+	return viterbiMatrix;
+}
+
+function displayViterbiMatrix(vtMax){
+	console.log(vtMax);
+	var tb = document.createElement("table");
+	tb.setAttribute("cellpadding", "8px");
+	var setRowTitle = true;
+	for(var state in vtMax){
+		var tr = document.createElement("tr");
+		var td = document.createElement("td");
+		td.innerHTML = "<b>" + state + ". " + vtMax[state][0].tag + "</b>";
+		tr.appendChild(td);
+
+		if(setRowTitle){
+			var rowTitle = document.createElement("tr");
+			var td = document.createElement("td");
+			rowTitle.appendChild(td);
+			tb.appendChild(rowTitle);
+		}
+		for(var word in vtMax[state]){
+			if(setRowTitle){
+				var td = document.createElement("td");
+				td.innerHTML = "<b>" + vtMax[state][word].word + "</b>";
+				rowTitle.appendChild(td);
+			}
+			td = document.createElement("td");
+			td.innerHTML = "V" + state + "." + word + ": " + vtMax[state][word].v + "<br> backPointer: " + vtMax[state][word].backpointer;
+			tr.appendChild(td);
+		}
+		tb.appendChild(tr);
+		setRowTitle = false;
+	}
+	document.body.appendChild(tb);
+}
+
+/**
+ * Returns a numeric value from given collection of probs
+ * If probs = word probs; return word probabaility
+ * If probs = transition probs; returns transition probability
+ * Implemented to facilitate numerical casts
+ * @param probs
+ * @param word
+ * @param tag
+ * @returns
+ */
+function getNumericProb(probs, word, tag){
+	try{
+		if(typeof probs[word][tag] !== "undefined"){
+			return probs[word][tag];
+		}
+	}catch(ex){};
+	return 0;
+}
 
 function init(){
 	readTreeBank(function(response){
@@ -282,6 +387,9 @@ function init(){
 		console.log("Trained transition Probabilities: ", probs.transitionProbs);
 		var posTags = displayTransitionMatrix(probs.transitionProbs);
 		console.log("All POS Tags available in train dataSet: ", posTags);
-		displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[8]);	
+		displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[0]);	
+		var vtMatrix = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[111]);
+		displayViterbiMatrix(vtMatrix);
+		displayCorpus(dataSet);
 	});
 }
