@@ -1,4 +1,4 @@
-/** 
+/**
  * Reads METU Sabancı treebank asyncly
  * Returns input as callback
  */
@@ -58,7 +58,7 @@ function divideCorpusRandomly(corpus, random){
 	var previousRand = JSON.parse(localStorage.getItem("randSequence"));
 	for(var i=0; i<testLength; i++){ //For each time randomly select an entry in corpus for test data
 		var rand;
-		if(random || previousRand == null) //generate different corpus for each time 
+		if(random || previousRand == null) //generate different corpus for each time
 			rand = Math.floor(Math.random()*corpus.length);
 		else
 			rand = previousRand[i];
@@ -114,20 +114,20 @@ function trainSystem(trainData){
 				 POSCounts[trainData[i].tags[j]] +=1;
 		}
 	}
-	
+
 	var transitionProbs = new Object();
 	var wordProbs = new Object();
 	for(var i=0; i<trainData.length; i++){
 		//console.log(trainData[i].getPOSTag()); //For test purposes
 		//console.log(trainData[i].getSentence());
-		
+
 		//set transition probs for start
 		if(typeof transitionProbs["start"] === "undefined") //init start tag
 			transitionProbs["start"] = new Object();
 		if(typeof transitionProbs["start"][trainData[i].tags[0]] === "undefined")
 			transitionProbs["start"][trainData[i].tags[0]] = 1;
 		else
-			transitionProbs["start"][trainData[i].tags[0]] = 
+			transitionProbs["start"][trainData[i].tags[0]] =
 				transitionProbs["start"][trainData[i].tags[0]]*trainData.length + 1; //trainData.length = count of <s>
 		transitionProbs["start"][trainData[i].tags[0]]  /= trainData.length; //trainData.length = count of <s>
 		//set transition probs for start
@@ -136,27 +136,39 @@ function trainSystem(trainData){
 			//Set transition probabilities
 			if(typeof transitionProbs[trainData[i].tags[j]] === "undefined")
 				transitionProbs[trainData[i].tags[j]] = new Object();
-			
+
 			if(typeof transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] === "undefined")
 				transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] = 1; //Cause undefineds - no problem
 			else
-				transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] = 
+				transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] =
 					transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]]*POSCounts[trainData[i].tags[j]] + 1;
 			transitionProbs[trainData[i].tags[j]][trainData[i].tags[j+1]] /= POSCounts[trainData[i].tags[j]]; //Divide by count of first tag
 			//Set transition probabilities
-			
+
 			//Set for word probabilities
 			if(typeof wordProbs[trainData[i].words[j]] === "undefined")
 				wordProbs[trainData[i].words[j]] = new Object();
 			if(typeof wordProbs[trainData[i].words[j]][trainData[i].tags[j]] === "undefined")
-				wordProbs[trainData[i].words[j]][trainData[i].tags[j]] = 1; 
-			else 
-				wordProbs[trainData[i].words[j]][trainData[i].tags[j]] = 
-					wordProbs[trainData[i].words[j]][trainData[i].tags[j]]*POSCounts[trainData[i].tags[j]] + 1; 
+				wordProbs[trainData[i].words[j]][trainData[i].tags[j]] = 1;
+			else
+				wordProbs[trainData[i].words[j]][trainData[i].tags[j]] =
+					wordProbs[trainData[i].words[j]][trainData[i].tags[j]]*POSCounts[trainData[i].tags[j]] + 1;
 			wordProbs[trainData[i].words[j]][trainData[i].tags[j]] /= POSCounts[trainData[i].tags[j]];
 			//Set for word probabilities
 		}
-	}	
+
+		//set transition prob end for last tag
+		if(typeof transitionProbs[trainData[i].tags[j]] === "undefined") //init start tag
+			transitionProbs[trainData[i].tags[j]] = new Object();
+		if(typeof transitionProbs[trainData[i].tags[j]]["end"] === "undefined")
+			transitionProbs[trainData[i].tags[j]]["end"] = 1;
+		else
+			transitionProbs[trainData[i].tags[j]]["end"] =
+			transitionProbs[trainData[i].tags[j]]["end"]*trainData.length + 1; //trainData.length = count of <end>
+		transitionProbs[trainData[i].tags[j]]["end"] /= trainData.length; //trainData.length = count of <end>
+		//set transition prob end for last tag
+
+	}
 	return {"transitionProbs" : transitionProbs, "wordProbs": wordProbs};
 }
 
@@ -175,20 +187,22 @@ function displayTransitionMatrix(transProbs){
 					posTags[tag2] = null;
 				}
 			}
-		}			
+		}
 	}
 	var tb = document.createElement("table");
 	tb.setAttribute("cellpadding", "5px");
 	var setRowTitle = true;
 	for(var tag in posTags){
+		if(tag == "end")
+			continue;
 		var setColTitle = true;
-		var tr = document.createElement("tr");	
+		var tr = document.createElement("tr");
 		if(setRowTitle){
 			var rowTitle = document.createElement("tr");
 			var td = document.createElement("td");
 			rowTitle.appendChild(td);
 			tb.appendChild(rowTitle);
-		}		
+		}
 		for(var tag2 in posTags){
 			if(tag2 != "start"){
 				if(setRowTitle){
@@ -201,7 +215,7 @@ function displayTransitionMatrix(transProbs){
 					td.innerHTML = "<b>" + tag + "</b>";
 					tr.appendChild(td);
 					setColTitle = false;
-				}			
+				}
 				//Set values
 				td = document.createElement("td");
 				if(typeof transProbs[tag][tag2] === "undefined")
@@ -217,7 +231,7 @@ function displayTransitionMatrix(transProbs){
 	document.body.appendChild(tb);
 	var arrayOfPosTags = new Array();
 	for(var tag in posTags){
-		if(tag !== "start") //ignore start
+		if(tag !== "start" && tag !== "end") //ignore start
 			arrayOfPosTags.push(tag);
 	}
 	return arrayOfPosTags;
@@ -240,7 +254,7 @@ function displayWordProbMatrix(wordProbs, availablePOSTags, input){
 		tr.appendChild(td);
 	}
 	tb.appendChild(tr);
-	
+
 	//set POSs to rows
 	for(i=0; i<availablePOSTags.length; i++){
 		tr = document.createElement("tr");
@@ -260,7 +274,7 @@ function displayWordProbMatrix(wordProbs, availablePOSTags, input){
 			tr.appendChild(td);
 		}
 		tb.appendChild(tr);
-	}	
+	}
 	document.body.appendChild(tb);
 };
 
@@ -268,18 +282,19 @@ function displayWordProbMatrix(wordProbs, availablePOSTags, input){
  * Implements vitrebi to given input sentence
  */
 function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
+	var tm = Date.now();
 	var POSTagsWithStart = new Array("start"); //Prepend start tag to available POS tags
 	POSTagsWithStart = POSTagsWithStart.concat(availablePOSTags);
-	console.log(POSTagsWithStart);
-	
-	viterbiMatrix = new Object();	
+	POSTagsWithStart = POSTagsWithStart.concat(new Array("end"));
+
+	viterbiMatrix = new Object();
 	for(var i = 0; i<POSTagsWithStart.length; i++){
 		viterbiMatrix[i] = new Object();
 		for(var j=0; j<input.words.length; j++){
 			viterbiMatrix[i][j] = {"v": -99 + " ("+i+""+j+")", "word": input.words[j], "tag": POSTagsWithStart[i], "backpointer": null};
 			if(j == 0){ //Initialization (of 1st column)
 				/*
-				 * Unknown words That is, do not use the word likelihood probabilities P(wi|ti) for unknown words. 
+				 * Unknown words That is, do not use the word likelihood probabilities P(wi|ti) for unknown words.
 				 * Just use the tag transition probabilities
 				 */
 				var ambiguityCheck = getNumericProb(wordProbs, viterbiMatrix[i][j].word, viterbiMatrix[i][j].tag);
@@ -290,9 +305,10 @@ function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
 			}
 		}
 	}
-	
+
+
 	for(j=1; j<input.words.length; j++){ //First word is already processed above
-		for(i=1; i<POSTagsWithStart.length; i++){ //Start tag is already processed above
+		for(i=0; i<POSTagsWithStart.length; i++){
 			var max = 0;
 			var maxPointer = -99;
 			for(var k=1; k<POSTagsWithStart.length; k++){ //get max of previous word's viterbi
@@ -300,28 +316,45 @@ function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
 				if(tmp >= max){
 					max = tmp;
 					maxPointer = k;
-				}						
+				}
 			}
-
+			//console.log("Backtrack for word: ", input.words[j], " ( ", POSTagsWithStart[i], ") is", POSTagsWithStart[maxPointer]);
 			viterbiMatrix[i][j].backpointer = maxPointer;
 			ambiguityCheck = getNumericProb(wordProbs, viterbiMatrix[i][j].word, viterbiMatrix[i][j].tag);
 			if(ambiguityCheck == 0)
 				ambiguityCheck = 1;
 			viterbiMatrix[i][j].v = (max*ambiguityCheck).toFixed(8);
-			
-
 		}
+
+
 	}
 	
-	//console.log(viterbiMatrix);
+	input.viterbiTags = new Array(); //Return assigned tag sequence by Viterbi
+	var word = j - 1;
+	var startPoint = viterbiMatrix[i-1][word].backpointer;
+	do{
+		try{ 	
+			input.viterbiTags[word] = POSTagsWithStart[startPoint];
+			startPoint = viterbiMatrix[startPoint][word].backpointer;
+		}catch(ex){console.log(ex);};
+			word--;
+	}while(word>-1);
 
-	return viterbiMatrix;
+	tm = Date.now() - tm;
+	return {viterbiMatrix: viterbiMatrix, timeElapsed: tm};
 }
 
-function displayViterbiMatrix(vtMax){
-	console.log(vtMax);
+/**
+* Backtrack viterbi matrix for tag sequence
+*/
+function displayViterbiMatrix(vtMax, input, runtime){
+	var tm = document.createElement("p");
+	tm.innerHTML = "<b>Elapsed time to run Viterbi</b>: " + runtime + " milisecs";
+	document.body.appendChild(tm);
+
 	var tb = document.createElement("table");
 	tb.setAttribute("cellpadding", "8px");
+	tb.style.backgroundColor = "darkgrey";
 	var setRowTitle = true;
 	for(var state in vtMax){
 		var tr = document.createElement("tr");
@@ -338,10 +371,11 @@ function displayViterbiMatrix(vtMax){
 		for(var word in vtMax[state]){
 			if(setRowTitle){
 				var td = document.createElement("td");
-				td.innerHTML = "<b>" + vtMax[state][word].word + "</b>";
+				td.innerHTML = "<b>" + vtMax[state][word].word + "</b> <i style='font-size:12px'>(" + input.tags[word] + ")</i>";
 				rowTitle.appendChild(td);
 			}
 			td = document.createElement("td");
+			td.id = state + "" + word;
 			td.innerHTML = "V" + state + "." + word + ": " + vtMax[state][word].v + "<br> backPointer: " + vtMax[state][word].backpointer;
 			tr.appendChild(td);
 		}
@@ -349,6 +383,19 @@ function displayViterbiMatrix(vtMax){
 		setRowTitle = false;
 	}
 	document.body.appendChild(tb);
+
+	var startPoint = vtMax[state][word].backpointer;
+	do{
+		try{
+			var id =  startPoint + "" + word;
+			if(input.tags[word] == input.viterbiTags[word])
+				document.getElementById(id).style.backgroundColor = "#93E893";
+			else
+				document.getElementById(id).style.backgroundColor = "#E05959";
+			startPoint = vtMax[startPoint][word].backpointer;
+		}catch(ex){console.log(ex);};
+			word--;
+	}while(word>-1);
 }
 
 /**
@@ -386,10 +433,10 @@ function init(){
 		probs = trainSystem(dataSet.train);
 		console.log("Trained transition Probabilities: ", probs.transitionProbs);
 		var posTags = displayTransitionMatrix(probs.transitionProbs);
-		console.log("All POS Tags available in train dataSet: ", posTags);
-		displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[0]);	
-		var vtMatrix = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[111]);
-		displayViterbiMatrix(vtMatrix);
-		displayCorpus(dataSet);
+		//console.log("All POS Tags available in train dataSet: ", posTags);
+		//displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[19]);
+		var result = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[19]);
+		displayViterbiMatrix(result.viterbiMatrix, dataSet.test[19], result.timeElapsed);
+		//displayCorpus(dataSet);
 	});
 }
