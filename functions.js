@@ -330,11 +330,14 @@ function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
 	}
 	
 	input.viterbiTags = new Array(); //Return assigned tag sequence by Viterbi
+	input.successCount = 0; //Number of words tagged correctly
 	var word = j - 1;
 	var startPoint = viterbiMatrix[i-1][word].backpointer;
 	do{
 		try{ 	
 			input.viterbiTags[word] = POSTagsWithStart[startPoint];
+			if(input.tags[word] == input.viterbiTags[word])
+				input.successCount++;
 			startPoint = viterbiMatrix[startPoint][word].backpointer;
 		}catch(ex){console.log(ex);};
 			word--;
@@ -417,6 +420,53 @@ function getNumericProb(probs, word, tag){
 	return 0;
 }
 
+function successRate(testData,transitionProbs, wordProbs, availablePOSTags){
+	var vtResult;
+	var numOfTags = 0;
+	var numOfSuccessTags = 0; //Number of words tagged correctly
+	var numOfSuccessSentences = 0; //Number of sentences tagged correctly as whole
+	for(test of testData){
+		viterbi(transitionProbs, wordProbs, availablePOSTags, test); //appends viterbiTags to test parameter
+		numOfTags += test.tags.length;
+		numOfSuccessTags += test.successCount;
+		if(test.tags.join() == test.viterbiTags.join())
+			numOfSuccessSentences++;
+	}
+
+	return {numberOfTags: numOfTags, numOfSuccessTags: numOfSuccessTags, numOfSuccessSentences: numOfSuccessSentences, numOfAllSentences: testData.length, 
+		getRateForTags: function(){return 100*this.numOfSuccessTags/this.numberOfTags}, 
+		successRateForSentences: function(){return 100*this.numOfSuccessSentences/this.numOfAllSentences}
+	}
+}
+
+function displayEvaluation(results){
+	var p = document.createElement("p");
+	p.innerHTML = "<b>Success Rate For Sentences: </b>" + results.successRateForSentences();
+	document.body.appendChild(p);
+
+	p = document.createElement("p");
+	p.innerHTML = "<b>Success Rate For Words: </b>" + results.getRateForTags();
+	document.body.appendChild(p);
+
+	p = document.createElement("p");
+	p.innerHTML = "<b>Correctly Tagged Sentences: </b>" + results.numOfSuccessSentences;
+	document.body.appendChild(p);
+
+	p = document.createElement("p");
+	p.innerHTML = "<b>Num of Sentences: </b>" + results.numOfAllSentences;
+	document.body.appendChild(p);
+
+	p = document.createElement("p");
+	p.innerHTML = "<b>Correctly Tagged Words: </b>" + results.numOfSuccessTags;
+	document.body.appendChild(p);
+
+	p = document.createElement("p");
+	p.innerHTML = "<b>Num of All Words: </b>" + results.numberOfTags;
+	document.body.appendChild(p);
+
+
+}
+
 function init(){
 	readTreeBank(function(response){
 		var corpus = parseCorpus(response);
@@ -437,6 +487,11 @@ function init(){
 		//displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[19]);
 		var result = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[19]);
 		displayViterbiMatrix(result.viterbiMatrix, dataSet.test[19], result.timeElapsed);
+		
+		var evaluation = successRate(dataSet.test, probs.transitionProbs, probs.wordProbs, posTags);
+		console.log(evaluation);
+		displayEvaluation(evaluation);
+		
 		//displayCorpus(dataSet);
 	});
 }
