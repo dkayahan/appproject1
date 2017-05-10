@@ -299,7 +299,7 @@ function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
 				 */
 				var ambiguityCheck = getNumericProb(wordProbs, viterbiMatrix[i][j].word, viterbiMatrix[i][j].tag);
 				if(ambiguityCheck == 0)
-					ambiguityCheck = 1;
+					ambiguityCheck = 0.000001;
 				viterbiMatrix[i][j].v = getNumericProb(transitionProbs, "start", viterbiMatrix[i][j].tag) * ambiguityCheck;
 				viterbiMatrix[i][j].backpointer = 0;
 			}
@@ -312,7 +312,7 @@ function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
 			var max = 0;
 			var maxPointer = -99;
 			for(var k=1; k<POSTagsWithStart.length; k++){ //get max of previous word's viterbi
-				var tmp = (viterbiMatrix[k][j-1].v * getNumericProb(transitionProbs, viterbiMatrix[k][j-1].tag, viterbiMatrix[i][j].tag)).toFixed(8);
+				var tmp = (viterbiMatrix[k][j-1].v * getNumericProb(transitionProbs, viterbiMatrix[k][j-1].tag, viterbiMatrix[i][j].tag));
 				if(tmp >= max){
 					max = tmp;
 					maxPointer = k;
@@ -322,8 +322,8 @@ function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
 			viterbiMatrix[i][j].backpointer = maxPointer;
 			ambiguityCheck = getNumericProb(wordProbs, viterbiMatrix[i][j].word, viterbiMatrix[i][j].tag);
 			if(ambiguityCheck == 0)
-				ambiguityCheck = 1;
-			viterbiMatrix[i][j].v = (max*ambiguityCheck).toFixed(8);
+				ambiguityCheck = 0.000001;
+			viterbiMatrix[i][j].v = max*ambiguityCheck;
 		}
 
 
