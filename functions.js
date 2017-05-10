@@ -75,9 +75,13 @@ function divideCorpusRandomly(corpus, random){
  * @param dataSet
  */
 function displayCorpus(dataSet){
+	document.getElementById("dataSet").innerHTML = "";
 	var tb = document.createElement("table");
 	var tr = document.createElement("tr");
 	var th = document.createElement("th");
+	th.innerHTML = "Order";
+	tb.appendChild(th);
+	th = document.createElement("th");
 	th.innerHTML = "Train Data ("+ dataSet.train.length + ")";
 	tb.appendChild(th);
 	th = document.createElement("th");
@@ -86,6 +90,9 @@ function displayCorpus(dataSet){
 	for(var i=0; i<dataSet.train.length; i++){
 		var tr = document.createElement("tr");
 		var td = document.createElement("td");
+		td.innerHTML = "<b>"+i+"</b>";
+		tr.appendChild(td);
+		td = document.createElement("td");
 		td.innerHTML = dataSet.train[i].getSentence() + " <i>(" + dataSet.train[i].getPOSTag() + ")</i>";
 		tr.appendChild(td);
 		td = document.createElement("td");
@@ -95,7 +102,7 @@ function displayCorpus(dataSet){
 		tr.appendChild(td);
 		tb.appendChild(tr);
 	}
-	document.body.appendChild(tb);
+	document.getElementById("dataSet").appendChild(tb);
 }
 
 /**
@@ -178,6 +185,7 @@ function trainSystem(trainData){
  * @param transProbs
  */
 function displayTransitionMatrix(transProbs){
+	document.getElementById("transMat").innerHTML = "";
 	var posTags = new Object();
 	for(var tag in transProbs){
 		if(tag != "undefined"){
@@ -228,7 +236,7 @@ function displayTransitionMatrix(transProbs){
 		setRowTitle = false;
 		tb.appendChild(tr);
 	}
-	document.body.appendChild(tb);
+	document.getElementById("transMat").appendChild(tb);
 	var arrayOfPosTags = new Array();
 	for(var tag in posTags){
 		if(tag !== "start" && tag !== "end") //ignore start
@@ -242,6 +250,7 @@ function displayTransitionMatrix(transProbs){
  * availableTags == all POS tags in transition matrix
  */
 function displayWordProbMatrix(wordProbs, availablePOSTags, input){
+	document.getElementById("wordMat").innerHTML = "";
 	//set words to columns
 	var tb = document.createElement("table");
 	tb.setAttribute("cellpadding", "5px");
@@ -275,7 +284,7 @@ function displayWordProbMatrix(wordProbs, availablePOSTags, input){
 		}
 		tb.appendChild(tr);
 	}
-	document.body.appendChild(tb);
+	document.getElementById("wordMat").appendChild(tb);
 };
 
 /**
@@ -351,9 +360,10 @@ function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
 * Backtrack viterbi matrix for tag sequence
 */
 function displayViterbiMatrix(vtMax, input, runtime){
+	document.getElementById("vitMax").innerHTML = "";
 	var tm = document.createElement("p");
 	tm.innerHTML = "<b>Elapsed time to run Viterbi</b>: " + runtime + " milisecs";
-	document.body.appendChild(tm);
+	document.getElementById("vitMax").appendChild(tm);
 
 	var tb = document.createElement("table");
 	tb.setAttribute("cellpadding", "8px");
@@ -385,7 +395,7 @@ function displayViterbiMatrix(vtMax, input, runtime){
 		tb.appendChild(tr);
 		setRowTitle = false;
 	}
-	document.body.appendChild(tb);
+	document.getElementById("vitMax").appendChild(tb);
 
 	var startPoint = vtMax[state][word].backpointer;
 	do{
@@ -440,56 +450,76 @@ function successRate(testData,transitionProbs, wordProbs, availablePOSTags){
 }
 
 function displayEvaluation(results){
+	document.getElementById("sucRates").innerHTML = "";
+	
 	var p = document.createElement("p");
 	p.innerHTML = "<b>Success Rate For Sentences: </b>" + results.successRateForSentences();
-	document.body.appendChild(p);
+	document.getElementById("sucRates").appendChild(p);
 
 	p = document.createElement("p");
 	p.innerHTML = "<b>Success Rate For Words: </b>" + results.getRateForTags();
-	document.body.appendChild(p);
+	document.getElementById("sucRates").appendChild(p);
 
 	p = document.createElement("p");
 	p.innerHTML = "<b>Correctly Tagged Sentences: </b>" + results.numOfSuccessSentences;
-	document.body.appendChild(p);
+	document.getElementById("sucRates").appendChild(p);
 
 	p = document.createElement("p");
 	p.innerHTML = "<b>Num of Sentences: </b>" + results.numOfAllSentences;
-	document.body.appendChild(p);
+	document.getElementById("sucRates").appendChild(p);
 
 	p = document.createElement("p");
 	p.innerHTML = "<b>Correctly Tagged Words: </b>" + results.numOfSuccessTags;
-	document.body.appendChild(p);
+	document.getElementById("sucRates").appendChild(p);
 
 	p = document.createElement("p");
 	p.innerHTML = "<b>Num of All Words: </b>" + results.numberOfTags;
-	document.body.appendChild(p);
+	document.getElementById("sucRates").appendChild(p);
 
 
 }
 
+function doViterbi(){
+	var id = document.getElementById("stForVit").value;
+	var result = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[id]);
+	displayViterbiMatrix(result.viterbiMatrix, dataSet.test[id], result.timeElapsed);	
+	displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[id]);
+}
+
+function trainNewModel(){
+	localStorage.removeItem("randSequence");
+	init();
+}
+
+function runTest(){
+	var evaluation = successRate(dataSet.test, probs.transitionProbs, probs.wordProbs, posTags);
+	displayEvaluation(evaluation);
+}
+
 function init(){
+	document.getElementById("sucRates").innerHTML = "";
 	readTreeBank(function(response){
-		var corpus = parseCorpus(response);
+		corpus = parseCorpus(response);
 		//console.log("Corpus:", corpus);
 		//console.log(corpus[0].getSentence());
 		//console.log(corpus[0].getPOSTag());
 		//console.log(corpus[0].words);
 		//console.log(corpus[0].tags);
-		var dataSet = divideCorpusRandomly(corpus, false);
+		dataSet = divideCorpusRandomly(corpus, false);
 		//console.log("DataSet: ",dataSet);
 		//displayCorpus(dataSet);
 		//console.log("Transition prob of Adj-Noun: ", probs.transitionProbs["Adj"]["Noun"]); //Use with try-catch, if throws exception assign 0
 		//console.log("Word prob of broşür-Noun: ", probs.wordProbs["broşür"]["Noun"]); //Use with try-catch, if throws exception assign 0
 		probs = trainSystem(dataSet.train);
 		console.log("Trained transition Probabilities: ", probs.transitionProbs);
-		var posTags = displayTransitionMatrix(probs.transitionProbs);
+		posTags = displayTransitionMatrix(probs.transitionProbs);
 		//console.log("All POS Tags available in train dataSet: ", posTags);
 		displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[0]);
 		var result = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[0]);
 		
-		var evaluation = successRate(dataSet.test, probs.transitionProbs, probs.wordProbs, posTags);
+		//var evaluation = successRate(dataSet.test, probs.transitionProbs, probs.wordProbs, posTags);
 
-		displayEvaluation(evaluation);
+		//displayEvaluation(evaluation);
 		displayViterbiMatrix(result.viterbiMatrix, dataSet.test[0], result.timeElapsed);
 		displayCorpus(dataSet);
 	});

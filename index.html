@@ -5,9 +5,20 @@
 	<style>
 		table{border-collapse: collapse; margin-bottom:30px}
 		table, th, td{border: 1px solid whitesmoke;}
+		input{width:200px;height:30px;}
 	</style>
 	<script src="./functions.js" type="text/javascript"></script>
 </head>	
 <body onload="init();">
+	Order in Test Dataset: <input type="text" id="stForVit"/>
+	<input type="button" value="ShowViterbi" onclick="doViterbi();"/>
+	<input type="button" value="Evaluate Model" onclick="runTest();"/>
+	<input type="button" value="Train New Model" onclick="trainNewModel();"/>
+
+	<div id="sucRates"></div>
+	<div id="vitMax"></div>
+	<div id="wordMat"></div>
+	<div id="transMat"></div>
+	<div id="dataSet"></div>
 </body>
 </html>
