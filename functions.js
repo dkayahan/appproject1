@@ -337,7 +337,6 @@ function viterbi(transitionProbs, wordProbs, availablePOSTags, input){
 
 
 	}
-	
 	input.viterbiTags = new Array(); //Return assigned tag sequence by Viterbi
 	input.successCount = 0; //Number of words tagged correctly
 	var word = j - 1;
@@ -508,15 +507,15 @@ function init(){
 		dataSet = divideCorpusRandomly(corpus, false);
 		//console.log("DataSet: ",dataSet);
 		//displayCorpus(dataSet);
-		//console.log("Transition prob of Adj-Noun: ", probs.transitionProbs["Adj"]["Noun"]); //Use with try-catch, if throws exception assign 0
-		//console.log("Word prob of broşür-Noun: ", probs.wordProbs["broşür"]["Noun"]); //Use with try-catch, if throws exception assign 0
+		//console.log("Transition prob of Adj-Noun: ", probs.transitionProbs["Adj"]["Noun"]);
+		//console.log("Word prob of broşür-Noun: ", probs.wordProbs["broşür"]["Noun"]);
 		probs = trainSystem(dataSet.train);
 		console.log("Trained transition Probabilities: ", probs.transitionProbs);
 		posTags = displayTransitionMatrix(probs.transitionProbs);
 		//console.log("All POS Tags available in train dataSet: ", posTags);
 		displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[0]);
 		var result = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[0]);
-		
+
 		//var evaluation = successRate(dataSet.test, probs.transitionProbs, probs.wordProbs, posTags);
 
 		//displayEvaluation(evaluation);
