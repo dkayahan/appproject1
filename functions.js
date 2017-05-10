@@ -484,14 +484,13 @@ function init(){
 		console.log("Trained transition Probabilities: ", probs.transitionProbs);
 		var posTags = displayTransitionMatrix(probs.transitionProbs);
 		//console.log("All POS Tags available in train dataSet: ", posTags);
-		//displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[19]);
-		var result = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[19]);
-		displayViterbiMatrix(result.viterbiMatrix, dataSet.test[19], result.timeElapsed);
+		displayWordProbMatrix(probs.wordProbs, posTags, dataSet.test[0]);
+		var result = viterbi(probs.transitionProbs, probs.wordProbs, posTags, dataSet.test[0]);
 		
 		var evaluation = successRate(dataSet.test, probs.transitionProbs, probs.wordProbs, posTags);
-		console.log(evaluation);
+
 		displayEvaluation(evaluation);
-		
-		//displayCorpus(dataSet);
+		displayViterbiMatrix(result.viterbiMatrix, dataSet.test[0], result.timeElapsed);
+		displayCorpus(dataSet);
 	});
 }
